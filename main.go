@@ -47,14 +47,14 @@ var rawStart point
 func main() {
 	rand.Seed(time.Now().Unix())
 
-	start := time.Now()
-	fieldMap := rooms(100, 100)
-	elapsed := time.Since(start)
+	var start = time.Now()
+	var fieldMap = empty(100, 100)
+	var elapsed = time.Since(start)
 	fmt.Printf("go execution %v", elapsed)
 
 	fmt.Println("")
 	fmt.Println("")
-	field, err := json.Marshal(fieldMap)
+	var field, err = json.Marshal(fieldMap)
 
 	if err != nil {
 		fmt.Println("Error")
@@ -69,21 +69,23 @@ func getRandomInt(min, max int) int {
 
 // tested
 func empty(rows, cells int) [][]string {
-
-	var field [][]string
+	var field = make([][]string, rows+1)
 	var item string
+	var subField []string
+	var x, y int
 
-	for y := 0; y <= rows; y++ {
-		field = append(field, []string{})
+	for y = 0; y <= rows; y++ {
+		subField = make([]string, cells+1)
+		field[y] = subField
 
-		for x := 0; x <= cells; x++ {
+		for x = 0; x <= cells; x++ {
 			if y == 0 || y == rows || x == 0 || x == cells {
 				item = types["rock"]
 			} else {
 				item = types["empty"]
 			}
 
-			field[y] = append(field[y], item)
+			field[y][x] = item
 		}
 	}
 
@@ -286,21 +288,29 @@ func find(array []string, value string) bool {
 
 // tested
 func getWallsInRange(room room, startX int, endX int) []string {
-	keys := getKeys(room.occupiedWalls)
-	allCells := filter(keys, func(v string) bool {
-		xCoordinate, _ := strconv.Atoi(strings.Split(v, ":")[1])
+	var keys = getKeys(room.occupiedWalls)
+	var allCells, filteredCells []string
+	var xCoordinate, yCoordinate int
 
-		return xCoordinate >= startX && xCoordinate <= endX
-	})
+	for _, cell := range keys {
+		xCoordinate, _ = strconv.Atoi(strings.Split(cell, ":")[1])
 
-	return filter(allCells, func(v string) bool {
-		var coordinates = strings.Split(v, ":")
-		yCoordinate, _ := strconv.Atoi(coordinates[0])
-		xCoordinate, _ := strconv.Atoi(coordinates[1])
+		if xCoordinate >= startX && xCoordinate <= endX {
+			allCells = append(allCells, cell)
+		}
+	}
 
-		return find(allCells, fmt.Sprintf("%d:%d", yCoordinate+1, xCoordinate)) == false
-	})
+	for _, cell := range allCells {
+		var coordinates = strings.Split(cell, ":")
+		yCoordinate, _ = strconv.Atoi(coordinates[0])
+		xCoordinate, _ = strconv.Atoi(coordinates[1])
 
+		if find(allCells, fmt.Sprintf("%d:%d", yCoordinate+1, xCoordinate)) == false {
+			filteredCells = append(filteredCells, cell)
+		}
+	}
+
+	return filteredCells
 }
 
 // tested
@@ -324,18 +334,26 @@ func moveCursorToTheNewRow() {
 // tested
 func deleteDuplications(wallsInRange []string) []string {
 	var filtered []string
+	var wallCoordinates []string
+	var yCoordinate int
+	var deleteIt bool
+	var wallToCompareCoordinates []string
+	var yCoordinateCompare int
 
 	for _, wall := range wallsInRange {
-		var deleteIt = false
-		var wallCoordinates = strings.Split(wall, ":")
-		yCoordinate, _ := strconv.Atoi(wallCoordinates[0])
+		deleteIt = false
+		wallCoordinates = strings.Split(wall, ":")
+		yCoordinate, _ = strconv.Atoi(wallCoordinates[0])
 
 		for _, wallToCompare := range wallsInRange {
-			var wallToCompareCoordinates = strings.Split(wallToCompare, ":")
-			yCoordinateCompare, _ := strconv.Atoi(wallToCompareCoordinates[0])
+			wallToCompareCoordinates = strings.Split(wallToCompare, ":")
 
-			if wallCoordinates[1] == wallToCompareCoordinates[1] && yCoordinate < yCoordinateCompare {
-				deleteIt = true
+			if wallCoordinates[1] == wallToCompareCoordinates[1] {
+				yCoordinateCompare, _ = strconv.Atoi(wallToCompareCoordinates[0])
+
+				if yCoordinate < yCoordinateCompare {
+					deleteIt = true
+				}
 			}
 		}
 
