@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"encoding/json"
 )
 
 type point struct {
@@ -38,18 +39,40 @@ var minRoomSize = map[string]int{"x": 4, "y": 4}
 var maxRoomSize = map[string]int{"x": 9, "y": 9}
 var fieldMap map[int]map[int]string
 var fieldSize = make(map[string]int)
-var crossedRooms = map[int]room{}
+var crossedRooms []room
+
+var cursorRectangle = point{x: 0, y: 0}
+var rawStart point
 
 func main() {
 	start := time.Now()
-	fieldMap := rooms(10, 10)
+	fieldMap := rooms(30, 30)
+	//fieldMap := getWallsInRange(room{start: point{x: 0, y: 0,},
+	//	end: point{x: 7, y: 6,},
+	//	occupiedCells: map[string]bool{"0:0": true, "0:1": true, "0:2": true, "0:3": true, "0:4": true, "0:5": true,
+	//		"0:6": true, "0:7": true, "1:0": true, "1:1": true, "1:2": true, "1:3": true, "1:4": true, "1:5": true,
+	//		"1:6": true, "1:7": true, "2:0": true, "2:1": true, "2:2": true, "2:3": true, "2:4": true, "2:5": true,
+	//		"2:6": true, "2:7": true, "3:0": true, "3:1": true, "3:2": true, "3:3": true, "3:4": true, "3:5": true,
+	//		"3:6": true, "3:7": true, "4:0": true, "4:1": true, "4:2": true, "4:3": true, "4:4": true, "4:5": true,
+	//		"4:6": true, "4:7": true, "5:0": true, "5:1": true, "5:2": true, "5:3": true, "5:4": true, "5:5": true,
+	//		"5:6": true, "5:7": true, "6:0": true, "6:1": true, "6:2": true, "6:3": true, "6:4": true, "6:5": true,
+	//		"6:6": true, "6:7": true,},
+	//	occupiedWalls: map[string]bool{"0:0": true, "0:7": true, "1:0": true, "1:7": true, "2:0": true, "2:7": true,
+	//		"3:0": true, "3:7": true, "4:0": true, "4:7": true, "5:0": true, "5:7": true, "6:0": true, "6:7": true,
+	//		"0:1": true, "6:1": true, "0:2": true, "6:2": true, "0:3": true, "6:3": true, "0:4": true, "6:4": true,
+	//		"0:5": true, "6:5": true, "0:6": true, "6:6": true,}},
+	//	0,
+	//	5)
 	elapsed := time.Since(start)
 
-	//field, _ := json.Marshal(fieldMap)
-	//fmt.Println(string(field))
 	fmt.Println("")
 	fmt.Println("")
-	fmt.Println(fieldMap)
+	field, err := json.Marshal(fieldMap)
+
+	if err != nil {
+		fmt.Println("Error")
+	}
+	fmt.Println(string(field))
 
 	fmt.Println("go execution", elapsed)
 }
@@ -96,32 +119,30 @@ func rooms(rows, cells int) map[int]map[int]string {
 	fieldMap[1][len(fieldMap[0])-2] = types["human"]
 	fieldMap[len(fieldMap)-2][len(fieldMap[0])-2] = types["human"]
 	fieldMap[len(fieldMap)-2][1] = types["human"]
+
 	return fieldMap
 }
 
-var cursorRectangle point
-var rawStart point
-
 func drawRooms() {
-	//cursorRectangle := point{x: 0, y: 0}
-	//rawStart := point{x: 0, y: 0}
-	var a = 10
-	//for !generated {
-	for a > 0 {
+	rawStart = point{x: 0, y: 0}
+	//var a = 10
+	for !generated {
+		//for a > 0 {
 		var room = getRandomRoomSize()
 		cursorRectangle = drawRoom(cursorRectangle, room)
 
-		//if cursorRectangle["x"] == fieldSize["maxX"] {
-		moveCursorToTheNewRow()
-		//	minYOnRow = -1
-		//}
-		a--
+		if cursorRectangle.x == fieldSize["maxX"] {
+			moveCursorToTheNewRow()
+			minYOnRow = -1
+		}
+		//a--
 	}
 }
 
 func getRandomRoomSize() point {
 	var x = getRandomInt(minRoomSize["x"], maxRoomSize["x"])
 	var y = getRandomInt(minRoomSize["y"], maxRoomSize["y"])
+
 	if cursorRectangle.x+x > fieldSize["maxX"] {
 		x = fieldSize["maxX"] - cursorRectangle.x
 	}
@@ -200,15 +221,15 @@ func drawRoom(cursorRectangle point, roomToDraw point) point {
 	return point{y: startY, x: roomEndX}
 }
 
-func concatMaps(a, b map[string]bool) map[string]bool {
-	for k, v := range b {
-		a[k] = v
+func concatMaps(a, b []string) []string {
+	for _, v := range b {
+		a = append(a, v)
 	}
 
 	return a
 }
 
-// to test
+// tested
 func wallsIntersect(y, x int) bool {
 	for _, crossedRoom := range crossedRooms {
 		if crossedRoom.occupiedCells[fmt.Sprintf("%d:%d", y, x)] {
@@ -223,7 +244,7 @@ func getStartRowForRoom(startX, roomEndX int) int {
 	var startY = cursorRectangle.y
 
 	if rawStart.y != 0 {
-		var wallsInRange = map[string]bool{}
+		var wallsInRange []string
 
 		// We must cling to the "lowest" room in our range
 		for _, room := range createdRooms {
@@ -232,22 +253,23 @@ func getStartRowForRoom(startX, roomEndX int) int {
 			}
 		}
 
-		//wallsInRange = deleteDuplications(wallsInRange)
-		//
-		//if len(wallsInRange) > 0 {
-		//	startY = findMinY(wallsInRange)
-		//}
-		//
-		//for _, room := range createdRooms {
-		//	if (room.end.x >= cursorRectangle.x || room.start.x <= roomEndX) && room.end.y >= startY {
-		//		crossedRooms = append(crossedRooms, room)
-		//	}
-		//}
+		wallsInRange = deleteDuplications(wallsInRange)
+
+		if len(wallsInRange) > 0 {
+			startY = findMinY(wallsInRange)
+		}
+
+		for _, room := range createdRooms {
+			if (room.end.x >= cursorRectangle.x || room.start.x <= roomEndX) && room.end.y >= startY {
+				crossedRooms = append(crossedRooms, room)
+			}
+		}
 	}
 
 	return startY
 }
 
+// tested
 func getKeys(array map[string]bool) []string {
 	keys := reflect.ValueOf(array).MapKeys()
 
@@ -259,15 +281,18 @@ func getKeys(array map[string]bool) []string {
 	return strkeys
 }
 
+// tested
 func filter(ss []string, test func(string) bool) (ret []string) {
 	for _, s := range ss {
 		if test(s) {
 			ret = append(ret, s)
 		}
 	}
-	return
+
+	return ret
 }
 
+// tested
 func find(array []string, value string) bool {
 	for _, v := range array {
 		if v == value {
@@ -278,25 +303,26 @@ func find(array []string, value string) bool {
 	return false
 }
 
-func getWallsInRange(room room, startX int, endX int) map[string]bool {
-	allCells := filter(getKeys(room.occupiedWalls), func(v string) bool {
-		xCoordinate, _ := strconv.Atoi(strings.SplitAfter(v, ":")[1])
+// tested
+func getWallsInRange(room room, startX int, endX int) []string {
+	keys := getKeys(room.occupiedWalls)
+	allCells := filter(keys, func(v string) bool {
+		xCoordinate, _ := strconv.Atoi(strings.Split(v, ":")[1])
 
 		return xCoordinate >= startX && xCoordinate <= endX
 	})
 
-	filter(allCells, func(v string) bool {
-		var coordinates = strings.SplitAfter(v, ":")
+	return filter(allCells, func(v string) bool {
+		var coordinates = strings.Split(v, ":")
 		yCoordinate, _ := strconv.Atoi(coordinates[0])
 		xCoordinate, _ := strconv.Atoi(coordinates[1])
 
 		return find(allCells, fmt.Sprintf("%d:%d", yCoordinate+1, xCoordinate)) == false
 	})
 
-	return map[string]bool{}
-
 }
 
+// tested
 func moveCursorToTheNewRow() {
 	if rawStart.y == fieldSize["maxY"] {
 		generated = true
@@ -312,4 +338,47 @@ func moveCursorToTheNewRow() {
 
 	cursorRectangle = point{x: 0, y: roomWithMaxY.end.y}
 	rawStart = cursorRectangle
+}
+
+// tested
+func deleteDuplications(wallsInRange []string) []string {
+	var filtered []string
+
+	for _, wall := range wallsInRange {
+		var deleteIt = false
+		var wallCoordinates = strings.Split(wall, ":")
+		yCoordinate, _ := strconv.Atoi(wallCoordinates[0])
+
+		for _, wallToCompare := range wallsInRange {
+			var wallToCompareCoordinates = strings.Split(wallToCompare, ":")
+			yCoordinateCompare, _ := strconv.Atoi(wallToCompareCoordinates[0])
+
+			if wallCoordinates[1] == wallToCompareCoordinates[1] && yCoordinate < yCoordinateCompare {
+				deleteIt = true
+			}
+		}
+
+		if !deleteIt {
+			filtered = append(filtered, wall)
+		}
+	}
+
+	return filtered
+}
+
+// tested
+func findMinY(wallsInRange []string) int {
+	var firstWallCoordinates = strings.Split(wallsInRange[0], ":")
+	var minY, _ = strconv.Atoi(firstWallCoordinates[0])
+
+	for _, wall := range wallsInRange {
+		var wallCoordinates = strings.Split(wall, ":")
+		var currentY, _ = strconv.Atoi(wallCoordinates[0])
+
+		if currentY < minY {
+			minY = currentY
+		}
+	}
+
+	return minY
 }

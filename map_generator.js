@@ -449,6 +449,7 @@ class MapGenerator {
     }
 
     getStartRowForRoom(startX, roomEndX) {
+        console.log(startX, roomEndX)
         let startY = this.cursorRectangle.y;
         this.crossedRooms = [];
 
@@ -475,6 +476,10 @@ class MapGenerator {
             }
         }
 
+        console.dir(this.cursorRectangle)
+        console.dir(this.createdRooms)
+        console.log(startY)
+
         return startY;
     }
 
@@ -482,6 +487,7 @@ class MapGenerator {
         const filtered = [];
 
         for (const wall of wallsInRange) {
+
             let deleteIt = false;
             const wallCoordinates = wall.split(':');
 
@@ -522,10 +528,12 @@ class MapGenerator {
             return xCoordinate >= startX && xCoordinate <= endX;
         });
 
-        return allCells.filter(v => {
+        const result = allCells.filter(v => {
             const coordinates = v.split(':');
             return allCells.indexOf((+coordinates[0] + 1) + ':' + coordinates[1]) === -1;
         });
+
+        return result
     }
 
     getRandomRoomSize() {
@@ -554,5 +562,26 @@ class MapGenerator {
 const mapGenerator = new MapGenerator();
 
 console.time('node execution');
-mapGenerator.empty(10, 10);
+mapGenerator.rooms(10, 10);
+// mapGenerator.getWallsInRange({
+//     start: {x: 0, y: 0,},
+//     end: {x: 7, y: 6,},
+//     occupiedCells: {
+//         "0:0": true, "0:1": true, "0:2": true, "0:3": true, "0:4": true, "0:5": true,
+//         "0:6": true, "0:7": true, "1:0": true, "1:1": true, "1:2": true, "1:3": true, "1:4": true, "1:5": true,
+//         "1:6": true, "1:7": true, "2:0": true, "2:1": true, "2:2": true, "2:3": true, "2:4": true, "2:5": true,
+//         "2:6": true, "2:7": true, "3:0": true, "3:1": true, "3:2": true, "3:3": true, "3:4": true, "3:5": true,
+//         "3:6": true, "3:7": true, "4:0": true, "4:1": true, "4:2": true, "4:3": true, "4:4": true, "4:5": true,
+//         "4:6": true, "4:7": true, "5:0": true, "5:1": true, "5:2": true, "5:3": true, "5:4": true, "5:5": true,
+//         "5:6": true, "5:7": true, "6:0": true, "6:1": true, "6:2": true, "6:3": true, "6:4": true, "6:5": true,
+//         "6:6": true, "6:7": true,
+//     },
+//     occupiedWalls: {
+//         "0:0": true, "0:7": true, "1:0": true, "1:7": true, "2:0": true, "2:7": true,
+//         "3:0": true, "3:7": true, "4:0": true, "4:7": true, "5:0": true, "5:7": true, "6:0": true, "6:7": true,
+//         "0:1": true, "6:1": true, "0:2": true, "6:2": true, "0:3": true, "6:3": true, "0:4": true, "6:4": true,
+//         "0:5": true, "6:5": true, "0:6": true, "6:6": true,
+//     }
+// }, 0, 5);
 console.timeEnd('node execution');
+// console.log(JSON.stringify(map))
