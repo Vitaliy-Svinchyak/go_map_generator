@@ -37,7 +37,7 @@ var minYOnRow = -1
 
 var minRoomSize = map[string]int{"x": 4, "y": 4}
 var maxRoomSize = map[string]int{"x": 9, "y": 9}
-var fieldMap map[int]map[int]string
+var fieldMap [][]string
 var fieldSize = make(map[string]int)
 var crossedRooms []room
 
@@ -45,25 +45,12 @@ var cursorRectangle = point{x: 0, y: 0}
 var rawStart point
 
 func main() {
+	rand.Seed(time.Now().Unix())
+
 	start := time.Now()
-	fieldMap := rooms(30, 30)
-	//fieldMap := getWallsInRange(room{start: point{x: 0, y: 0,},
-	//	end: point{x: 7, y: 6,},
-	//	occupiedCells: map[string]bool{"0:0": true, "0:1": true, "0:2": true, "0:3": true, "0:4": true, "0:5": true,
-	//		"0:6": true, "0:7": true, "1:0": true, "1:1": true, "1:2": true, "1:3": true, "1:4": true, "1:5": true,
-	//		"1:6": true, "1:7": true, "2:0": true, "2:1": true, "2:2": true, "2:3": true, "2:4": true, "2:5": true,
-	//		"2:6": true, "2:7": true, "3:0": true, "3:1": true, "3:2": true, "3:3": true, "3:4": true, "3:5": true,
-	//		"3:6": true, "3:7": true, "4:0": true, "4:1": true, "4:2": true, "4:3": true, "4:4": true, "4:5": true,
-	//		"4:6": true, "4:7": true, "5:0": true, "5:1": true, "5:2": true, "5:3": true, "5:4": true, "5:5": true,
-	//		"5:6": true, "5:7": true, "6:0": true, "6:1": true, "6:2": true, "6:3": true, "6:4": true, "6:5": true,
-	//		"6:6": true, "6:7": true,},
-	//	occupiedWalls: map[string]bool{"0:0": true, "0:7": true, "1:0": true, "1:7": true, "2:0": true, "2:7": true,
-	//		"3:0": true, "3:7": true, "4:0": true, "4:7": true, "5:0": true, "5:7": true, "6:0": true, "6:7": true,
-	//		"0:1": true, "6:1": true, "0:2": true, "6:2": true, "0:3": true, "6:3": true, "0:4": true, "6:4": true,
-	//		"0:5": true, "6:5": true, "0:6": true, "6:6": true,}},
-	//	0,
-	//	5)
+	fieldMap := rooms(100, 100)
 	elapsed := time.Since(start)
+	fmt.Printf("go execution %v", elapsed)
 
 	fmt.Println("")
 	fmt.Println("")
@@ -73,24 +60,21 @@ func main() {
 		fmt.Println("Error")
 	}
 	fmt.Println(string(field))
-
-	fmt.Println("go execution", elapsed)
 }
 
 // tested
 func getRandomInt(min, max int) int {
-	rand.Seed(time.Now().Unix())
 	return rand.Intn(max-min) + min
 }
 
 // tested
-func empty(rows, cells int) map[int]map[int]string {
+func empty(rows, cells int) [][]string {
 
-	var field = map[int]map[int]string{}
+	var field [][]string
 	var item string
 
 	for y := 0; y <= rows; y++ {
-		field[y] = map[int]string{}
+		field = append(field, []string{})
 
 		for x := 0; x <= cells; x++ {
 			if y == 0 || y == rows || x == 0 || x == cells {
@@ -99,14 +83,14 @@ func empty(rows, cells int) map[int]map[int]string {
 				item = types["empty"]
 			}
 
-			field[y][x] = item
+			field[y] = append(field[y], item)
 		}
 	}
 
 	return field
 }
 
-func rooms(rows, cells int) map[int]map[int]string {
+func rooms(rows, cells int) [][]string {
 	fieldMap = empty(rows, cells)
 
 	fieldSize["maxY"] = rows
@@ -125,9 +109,7 @@ func rooms(rows, cells int) map[int]map[int]string {
 
 func drawRooms() {
 	rawStart = point{x: 0, y: 0}
-	//var a = 10
 	for !generated {
-		//for a > 0 {
 		var room = getRandomRoomSize()
 		cursorRectangle = drawRoom(cursorRectangle, room)
 
@@ -135,7 +117,6 @@ func drawRooms() {
 			moveCursorToTheNewRow()
 			minYOnRow = -1
 		}
-		//a--
 	}
 }
 

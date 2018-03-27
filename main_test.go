@@ -29,7 +29,7 @@ func TestDeleteDuplications(t *testing.T) {
 
 func TestEmpty(t *testing.T) {
 	v := empty(2, 2)
-	var expected = map[int]map[int]string{
+	var expected = [][]string{
 		0: {
 			0: types["rock"],
 			1: types["rock"],
