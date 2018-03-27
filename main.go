@@ -48,7 +48,7 @@ func main() {
 	rand.Seed(time.Now().Unix())
 
 	var start = time.Now()
-	var fieldMap = empty(100, 100)
+	var fieldMap = rooms(50, 50)
 	var elapsed = time.Since(start)
 	fmt.Printf("go execution %v", elapsed)
 
@@ -226,26 +226,29 @@ func wallsIntersect(y, x int) bool {
 func getStartRowForRoom(startX, roomEndX int) int {
 	var startY = cursorRectangle.y
 
-	if rawStart.y != 0 {
-		var wallsInRange []string
+	if rawStart.y == 0 {
+		return startY
+	}
 
-		// We must cling to the "lowest" room in our range
-		for _, room := range createdRooms {
-			if (room.start.x >= startX && room.start.x <= roomEndX) || (room.end.x >= startX && room.end.x <= roomEndX) {
-				wallsInRange = concatMaps(wallsInRange, getWallsInRange(room, cursorRectangle.x, roomEndX))
-			}
+	var wallsInRange []string
+	var room room
+
+	// We must cling to the "lowest" room in our range
+	for _, room = range createdRooms {
+		if (room.start.x >= startX && room.start.x <= roomEndX) || (room.end.x >= startX && room.end.x <= roomEndX) {
+			wallsInRange = concatMaps(wallsInRange, getWallsInRange(room, cursorRectangle.x, roomEndX))
 		}
+	}
 
-		wallsInRange = deleteDuplications(wallsInRange)
+	wallsInRange = deleteDuplications(wallsInRange)
 
-		if len(wallsInRange) > 0 {
-			startY = findMinY(wallsInRange)
-		}
+	if len(wallsInRange) > 0 {
+		startY = findMinY(wallsInRange)
+	}
 
-		for _, room := range createdRooms {
-			if (room.end.x >= cursorRectangle.x || room.start.x <= roomEndX) && room.end.y >= startY {
-				crossedRooms = append(crossedRooms, room)
-			}
+	for _, room = range createdRooms {
+		if (room.end.x >= cursorRectangle.x || room.start.x <= roomEndX) && room.end.y >= startY {
+			crossedRooms = append(crossedRooms, room)
 		}
 	}
 
@@ -256,23 +259,12 @@ func getStartRowForRoom(startX, roomEndX int) int {
 func getKeys(array map[string]bool) []string {
 	keys := reflect.ValueOf(array).MapKeys()
 
-	strkeys := make([]string, len(keys))
+	var strKeys = make([]string, len(keys))
 	for i := 0; i < len(keys); i++ {
-		strkeys[i] = keys[i].String()
+		strKeys[i] = keys[i].String()
 	}
 
-	return strkeys
-}
-
-// tested
-func filter(ss []string, test func(string) bool) (ret []string) {
-	for _, s := range ss {
-		if test(s) {
-			ret = append(ret, s)
-		}
-	}
-
-	return ret
+	return strKeys
 }
 
 // tested
@@ -315,15 +307,17 @@ func getWallsInRange(room room, startX int, endX int) []string {
 
 // tested
 func moveCursorToTheNewRow() {
+	var createdRoom room
+
 	if rawStart.y == fieldSize["maxY"] {
 		generated = true
 	}
 
 	var roomWithMaxY = createdRooms[0]
 
-	for _, room := range createdRooms {
-		if room.start.x == 0 && room.end.y >= roomWithMaxY.end.y {
-			roomWithMaxY = room
+	for _, createdRoom = range createdRooms {
+		if createdRoom.start.x == 0 && createdRoom.end.y >= roomWithMaxY.end.y {
+			roomWithMaxY = createdRoom
 		}
 	}
 

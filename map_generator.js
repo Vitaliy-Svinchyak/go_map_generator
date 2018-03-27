@@ -555,6 +555,6 @@ class MapGenerator {
 const mapGenerator = new MapGenerator();
 
 console.time('node execution');
-const map = mapGenerator.rooms(100, 100);
+const map = mapGenerator.rooms(50, 50);
 console.timeEnd('node execution');
 // console.log(JSON.stringify(map));
