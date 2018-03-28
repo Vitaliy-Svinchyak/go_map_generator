@@ -256,3 +256,26 @@ func TestGetStartRowForRoom(t *testing.T) {
 //		rooms(20, 20)
 //	}
 //}
+
+func BenchmarkWallsIntersect(b *testing.B) {
+	b.ReportAllocs()
+
+	crossedRooms = append(crossedRooms,
+		room{start: point{x: 0, y: 0},
+			end: point{x: 6, y: 5},
+			occupiedCells:
+			map[string]bool{"0:0": true, "0:1": true, "0:2": true, "0:3": true, "0:4": true, "0:5": true, "0:6": true,
+				"1:0": true, "1:1": true, "1:2": true, "1:3": true, "1:4": true, "1:5": true, "1:6": true, "2:0": true,
+				"2:1": true, "2:2": true, "2:3": true, "2:4": true, "2:5": true, "2:6": true, "3:0": true, "3:1": true,
+				"3:2": true, "3:3": true, "3:4": true, "3:5": true, "3:6": true, "4:0": true, "4:1": true, "4:2": true,
+				"4:3": true, "4:4": true, "4:5": true, "4:6": true, "5:0": true, "5:1": true, "5:2": true, "5:3": true,
+				"5:4": true, "5:5": true, "5:6": true,},
+			occupiedWalls: map[string]bool{"0:0": true, "0:6": true, "1:0": true, "1:6": true, "2:0": true,
+				"2:6": true, "3:0": true, "3:6": true, "4:0": true, "4:6": true, "5:0": true, "5:6": true, "0:1": true,
+				"5:1": true, "0:2": true, "5:2": true, "0:3": true, "5:3": true, "0:4": true, "5:4": true, "0:5": true,
+				"5:5": true,}})
+
+	for n := 0; n < b.N; n++ {
+		wallsIntersect(5, 6)
+	}
+}

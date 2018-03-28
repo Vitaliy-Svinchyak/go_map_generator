@@ -59,7 +59,7 @@ var notConnectedRoomsCount int
 
 func main() {
 	var start = time.Now()
-	var fieldMap = rooms(15, 15)
+	var fieldMap = rooms(100, 100)
 	var elapsed = time.Since(start)
 	fmt.Printf("go execution %v", elapsed)
 
@@ -110,8 +110,8 @@ func rooms(rows, cells int) [][]string {
 	fieldSize["maxX"] = cells
 
 	drawRooms()
-	clearFatWalls()
-	drawDoors()
+	//clearFatWalls()
+	//drawDoors()
 	fieldMap[1][1] = types["human"]
 	fieldMap[1][len(fieldMap[0])-2] = types["human"]
 	fieldMap[len(fieldMap)-2][len(fieldMap[0])-2] = types["human"]
@@ -175,31 +175,31 @@ func drawRoom(cursorRectangle point, roomToDraw point) point {
 
 	for y := startY; y <= roomEndY; y++ {
 		for x := cursorRectangle.x; x <= roomEndX; x++ {
-			occupiedCells[ fmt.Sprintf("%d:%d", y, x)] = true
+			occupiedCells[concatYtoX(y, x)] = true
 		}
 	}
 
 	for y := startY; y <= roomEndY; y++ {
 		if !wallsIntersect(y, cursorRectangle.x) {
 			fieldMap[y][cursorRectangle.x] = types["rock"]
-			occupiedWalls[fmt.Sprintf("%d:%d", y, cursorRectangle.x)] = true
+			occupiedWalls[concatYtoX(y, cursorRectangle.x)] = true
 		}
 
 		if !wallsIntersect(y, roomEndX) {
 			fieldMap[y][roomEndX] = types["rock"]
-			occupiedWalls[fmt.Sprintf("%d:%d", y, roomEndX)] = true
+			occupiedWalls[concatYtoX(y, roomEndX)] = true
 		}
 	}
 
 	for x := cursorRectangle.x; x <= roomEndX; x++ {
 		if !wallsIntersect(startY, x) {
 			fieldMap[startY][x] = types["rock"]
-			occupiedWalls[fmt.Sprintf("%d:%d", startY, x)] = true
+			occupiedWalls[concatYtoX(startY, roomEndX)] = true
 		}
 
 		if !wallsIntersect(roomEndY, x) {
 			fieldMap[roomEndY][x] = types["rock"]
-			occupiedWalls[fmt.Sprintf("%d:%d", roomEndY, x)] = true
+			occupiedWalls[concatYtoX(roomEndY, roomEndX)] = true
 		}
 	}
 
@@ -228,7 +228,7 @@ func concatMaps(a, b []string) []string {
 // tested
 func wallsIntersect(y, x int) bool {
 	for _, crossedRoom := range crossedRooms {
-		if crossedRoom.occupiedCells[fmt.Sprintf("%d:%d", y, x)] {
+		if crossedRoom.occupiedCells[concatYtoX(y, x)] {
 			return true
 		}
 	}
@@ -328,7 +328,7 @@ func getWallsInRange(room room, startX int, endX int) []string {
 		yCoordinate, _ = strconv.Atoi(coordinates[0])
 		xCoordinate, _ = strconv.Atoi(coordinates[1])
 
-		if find(allCells, fmt.Sprintf("%d:%d", yCoordinate+1, xCoordinate)) == false {
+		if find(allCells, concatYtoX(yCoordinate+1, xCoordinate)) == false {
 			filteredCells = append(filteredCells, cell)
 		}
 	}
@@ -524,7 +524,7 @@ func drawDoors() {
 
 func getRoomDescription(y, x int) (bool, roomDescription) {
 	for _, room := range roomsDescription {
-		if room.emptyList[fmt.Sprintf("%d:%d", y, x)] {
+		if room.emptyList[concatYtoX(y, x)] {
 			return false, roomDescription{}
 		}
 	}
@@ -539,7 +539,7 @@ func generateRoomDescription(y, x int) roomDescription {
 		connected: map[int]bool{},
 	}
 
-	roomDesc.emptyList[fmt.Sprintf("%d:%d", y, x)] = true
+	roomDesc.emptyList[concatYtoX(y, x)] = true
 	var toCheck = []point{{y: y, x: x}}
 	var i = 0
 
@@ -552,37 +552,37 @@ func generateRoomDescription(y, x int) roomDescription {
 			x = fieldToCheck.x
 
 			if fieldMap[y-1][x] == types["rock"] {
-				roomDesc.wallList[fmt.Sprintf("%d:%d", y-1, x)] = true
+				roomDesc.wallList[concatYtoX(y-1, x)] = true
 			}
 
 			if fieldMap[y][x+1] == types["empty"] {
-				if !roomDesc.emptyList[fmt.Sprintf("%d:%d", y, x+1)] {
+				if !roomDesc.emptyList[concatYtoX(y, x+1)] {
 					newToCheck = append(newToCheck, point{y: y, x: x + 1})
 				}
 
-				roomDesc.emptyList[fmt.Sprintf("%d:%d", y, x+1)] = true
+				roomDesc.emptyList[concatYtoX(y, x+1)] = true
 			} else {
-				roomDesc.wallList[fmt.Sprintf("%d:%d", y, x+1)] = true
+				roomDesc.wallList[concatYtoX(y, x+1)] = true
 			}
 
 			if fieldMap[y+1][x] == types["empty"] {
-				if !roomDesc.emptyList[fmt.Sprintf("%d:%d", y+1, x)] {
+				if !roomDesc.emptyList[concatYtoX(y+1, x)] {
 					newToCheck = append(newToCheck, point{y: y + 1, x: x})
 				}
 
-				roomDesc.emptyList[fmt.Sprintf("%d:%d", y+1, x)] = true
+				roomDesc.emptyList[concatYtoX(y+1, x)] = true
 			} else {
-				roomDesc.wallList[fmt.Sprintf("%d:%d", y+1, x)] = true
+				roomDesc.wallList[concatYtoX(y+1, x)] = true
 			}
 
 			if fieldMap[y][x-1] == types["empty"] {
-				if !roomDesc.emptyList[fmt.Sprintf("%d:%d", y, x-1)] {
+				if !roomDesc.emptyList[concatYtoX(y, x-1)] {
 					newToCheck = append(newToCheck, point{y: y, x: x - 1})
 				}
 
-				roomDesc.emptyList[fmt.Sprintf("%d:%d", y, x-1)] = true
+				roomDesc.emptyList[concatYtoX(y, x-1)] = true
 			} else {
-				roomDesc.wallList[fmt.Sprintf("%d:%d", y, x-1)] = true
+				roomDesc.wallList[concatYtoX(y, x-1)] = true
 			}
 		}
 
@@ -707,4 +707,8 @@ func recalculateConnectionDiff(firstConnectedRoom *roomDescription) {
 	}
 	notConnectedRooms = filteredNotConnectedRooms
 	notConnectedRoomsCount = len(notConnectedRooms)
+}
+
+func concatYtoX(y, x int) string {
+	return strconv.Itoa(y) + ":" + strconv.Itoa(x)
 }
