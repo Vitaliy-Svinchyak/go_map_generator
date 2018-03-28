@@ -49,8 +49,8 @@ class MapGenerator {
         this.fieldMap = this.empty(rows, cells);
         this.fieldSize = {maxY: rows, maxX: cells};
         this.drawRooms();
-        // this.clearFatWalls();
-        // this.drawDoors();
+        this.clearFatWalls();
+        this.drawDoors();
         this.fieldMap[1][1] = type.human;
         this.fieldMap[1][this.fieldMap[0].length - 2] = type.human;
         this.fieldMap[this.fieldMap.length - 2][this.fieldMap[0].length - 2] = type.human;
@@ -118,8 +118,8 @@ class MapGenerator {
         while (toCheck.length !== 0) {
             const newToCheck = [];
 
-            for (const roomId in connectedRoom.connected) {
-                const room = this.roomsDescription[roomId];
+            for (const room of toCheck) {
+                // const room = this.roomsDescription[roomId];
 
                 if (!room.connected || room.available) {
                     continue;
@@ -555,6 +555,6 @@ class MapGenerator {
 const mapGenerator = new MapGenerator();
 
 console.time('node execution');
-const map = mapGenerator.rooms(50, 50);
+const map = mapGenerator.rooms(30, 30);
 console.timeEnd('node execution');
-// console.log(JSON.stringify(map));
+console.log(JSON.stringify(map));
