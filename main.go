@@ -56,10 +56,19 @@ var rawStart point
 var roomsDescription []roomDescription
 var notConnectedRooms []roomDescription
 var notConnectedRoomsCount int
+var directionToDraw = 1
+
+type line struct {
+	start point
+	end   point
+}
+
+var totalOccupiedCells = 0
 
 func main() {
+	rand.Seed(time.Now().UTC().UnixNano())
 	var start = time.Now()
-	var fieldMap = rooms(100, 100)
+	var fieldMap = rooms2(20, 20)
 	var elapsed = time.Since(start)
 	fmt.Printf("go execution %v", elapsed)
 
@@ -87,7 +96,6 @@ func empty(rows, cells int) [][]string {
 
 	for y = 0; y <= rows; y++ {
 		subField = make([]string, cells+1)
-		field[y] = subField
 
 		for x = 0; x <= cells; x++ {
 			if y == 0 || y == rows || x == 0 || x == cells {
@@ -96,8 +104,10 @@ func empty(rows, cells int) [][]string {
 				item = types["empty"]
 			}
 
-			field[y][x] = item
+			subField[x] = item
 		}
+
+		field[y] = subField
 	}
 
 	return field
@@ -109,7 +119,7 @@ func rooms(rows, cells int) [][]string {
 	fieldSize["maxY"] = rows
 	fieldSize["maxX"] = cells
 
-	drawRooms()
+	//drawRooms()
 	//clearFatWalls()
 	//drawDoors()
 	fieldMap[1][1] = types["human"]
@@ -492,223 +502,397 @@ func getMapOfPointPosition(y, x int) string {
 	return a
 }
 
-func drawDoors() {
-	var id = 0
+//func drawDoors() {
+//	var id = 0
+//
+//	for y := 1; y < fieldSize["maxY"]; y++ {
+//		for x := 1; x < fieldSize["maxX"]; x++ {
+//			if fieldMap[y][x] == types["rock"] {
+//				continue
+//			}
+//
+//			var hasDescription, roomDescription = getRoomDescription(y, x)
+//
+//			if hasDescription {
+//				roomDescription.id = id
+//				id++
+//				roomsDescription = append(roomsDescription, roomDescription)
+//			}
+//		}
+//	}
+//
+//	roomsDescription[0].available = true
+//	notConnectedRooms = roomsDescription
+//	notConnectedRoomsCount = len(roomsDescription) - 1
+//
+//	var i = 0
+//	for notConnectedRoomsCount != 0 {
+//		connectNotConnectedRooms()
+//		i++
+//	}
+//}
+//
+//func getRoomDescription(y, x int) (bool, roomDescription) {
+//	for _, room := range roomsDescription {
+//		if room.emptyList[concatYtoX(y, x)] {
+//			return false, roomDescription{}
+//		}
+//	}
+//
+//	return true, generateRoomDescription(y, x)
+//}
+//
+//func generateRoomDescription(y, x int) roomDescription {
+//	var roomDesc = roomDescription{
+//		emptyList: map[string]bool{},
+//		wallList:  map[string]bool{},
+//		connected: map[int]bool{},
+//	}
+//
+//	roomDesc.emptyList[concatYtoX(y, x)] = true
+//	var toCheck = []point{{y: y, x: x}}
+//	var i = 0
+//
+//	for len(toCheck) != 0 && i < 250 {
+//		var newToCheck []point
+//
+//		for _, fieldToCheck := range toCheck {
+//			i++
+//			y = fieldToCheck.y
+//			x = fieldToCheck.x
+//
+//			if fieldMap[y-1][x] == types["rock"] {
+//				roomDesc.wallList[concatYtoX(y-1, x)] = true
+//			}
+//
+//			if fieldMap[y][x+1] == types["empty"] {
+//				if !roomDesc.emptyList[concatYtoX(y, x+1)] {
+//					newToCheck = append(newToCheck, point{y: y, x: x + 1})
+//				}
+//
+//				roomDesc.emptyList[concatYtoX(y, x+1)] = true
+//			} else {
+//				roomDesc.wallList[concatYtoX(y, x+1)] = true
+//			}
+//
+//			if fieldMap[y+1][x] == types["empty"] {
+//				if !roomDesc.emptyList[concatYtoX(y+1, x)] {
+//					newToCheck = append(newToCheck, point{y: y + 1, x: x})
+//				}
+//
+//				roomDesc.emptyList[concatYtoX(y+1, x)] = true
+//			} else {
+//				roomDesc.wallList[concatYtoX(y+1, x)] = true
+//			}
+//
+//			if fieldMap[y][x-1] == types["empty"] {
+//				if !roomDesc.emptyList[concatYtoX(y, x-1)] {
+//					newToCheck = append(newToCheck, point{y: y, x: x - 1})
+//				}
+//
+//				roomDesc.emptyList[concatYtoX(y, x-1)] = true
+//			} else {
+//				roomDesc.wallList[concatYtoX(y, x-1)] = true
+//			}
+//		}
+//
+//		toCheck = newToCheck
+//		newToCheck = []point{}
+//	}
+//
+//	return roomDesc
+//}
+//
+//func connectNotConnectedRooms() {
+//	for roomI := range notConnectedRooms {
+//		if len(notConnectedRooms)-1 < roomI {
+//			return
+//		}
+//
+//		var room = &notConnectedRooms[roomI]
+//		var connectVariants = getConnectVariants(room)
+//		var connectNumber int
+//
+//		if len(connectVariants) > 0 {
+//			connectNumber = getRandomInt(0, len(connectVariants))
+//		} else {
+//			continue
+//		}
+//
+//		var toConnectI = connectVariants[connectNumber]
+//		var toConnect = &roomsDescription[toConnectI]
+//
+//		if room.available || toConnect.available {
+//			room.available = true
+//			toConnect.available = true
+//		}
+//
+//		connectTwoRooms(room, toConnect)
+//		recalculateConnectionDiff(room)
+//	}
+//}
+//
+//func getConnectVariants(room *roomDescription) []int {
+//	var roomWalls = getKeys(room.wallList)
+//	var variants []int
+//
+//	for _, roomWall := range roomWalls {
+//		for roomVariantI, roomVariant := range roomsDescription {
+//			if roomVariant.id != room.id && roomVariant.wallList[roomWall] && findInt(variants, roomVariantI) == false {
+//				variants = append(variants, roomVariantI)
+//			}
+//		}
+//	}
+//
+//	return variants
+//}
+//
+//func connectTwoRooms(from, to *roomDescription) {
+//	var jointWalls []string
+//
+//	if from.connected[to.id] {
+//		return
+//	}
+//
+//	from.connected[to.id] = true
+//	to.connected[from.id] = true
+//
+//	for fromWall := range from.wallList {
+//		if to.wallList[fromWall] {
+//			jointWalls = append(jointWalls, fromWall)
+//		}
+//	}
+//
+//	var randomWall = jointWalls[getRandomInt(0, len(jointWalls))]
+//	var coordinates = strings.Split(randomWall, ":")
+//	var y, _ = strconv.Atoi(coordinates[0])
+//	var x, _ = strconv.Atoi(coordinates[1])
+//	var coordinates2 = point{y: y, x: x}
+//
+//	if coordinates2.y == fieldSize["maxY"] || coordinates2.y == 0 || coordinates2.x == fieldSize["maxX"] || coordinates2.x == 0 {
+//		return
+//	}
+//
+//	fieldMap[coordinates2.y][coordinates2.x] = types["empty"]
+//}
+//
+//func recalculateConnectionDiff(firstConnectedRoom *roomDescription) {
+//	var toCheck = []*roomDescription{firstConnectedRoom}
+//
+//	for len(toCheck) != 0 {
+//		var newToCheck []*roomDescription
+//
+//		//for _, connectedRoom := range toCheck {
+//		for roomId := range toCheck {
+//			var room = toCheck[roomId]
+//
+//			if len(room.connected) == 0 || room.available {
+//				continue
+//			}
+//
+//			room.available = true
+//
+//		xFor:
+//			for roomIdRelation := range room.connected {
+//				var roomRelation = &roomsDescription[roomIdRelation]
+//
+//				if roomRelation.available {
+//					continue xFor
+//				}
+//				//roomRelation.available = true
+//
+//				newToCheck = append(newToCheck, roomRelation)
+//			}
+//		}
+//		//}
+//
+//		toCheck = newToCheck
+//	}
+//
+//	var filteredNotConnectedRooms []roomDescription
+//	for _, r := range roomsDescription {
+//		if !r.available {
+//			filteredNotConnectedRooms = append(filteredNotConnectedRooms, r)
+//		}
+//	}
+//	notConnectedRooms = filteredNotConnectedRooms
+//	notConnectedRoomsCount = len(notConnectedRooms)
+//}
 
-	for y := 1; y < fieldSize["maxY"]; y++ {
-		for x := 1; x < fieldSize["maxX"]; x++ {
-			if fieldMap[y][x] == types["rock"] {
-				continue
-			}
+func concatYtoX(y, x int) string {
+	return strconv.Itoa(y) + ":" + strconv.Itoa(x)
+}
 
-			var hasDescription, roomDescription = getRoomDescription(y, x)
+func rooms2(rows, cells int) [][]string {
+	fieldMap = empty(rows, cells)
 
-			if hasDescription {
-				roomDescription.id = id
-				id++
-				roomsDescription = append(roomsDescription, roomDescription)
-			}
-		}
-	}
+	fieldSize["maxY"] = rows
+	fieldSize["maxX"] = cells
 
-	roomsDescription[0].available = true
-	notConnectedRooms = roomsDescription
-	notConnectedRoomsCount = len(roomsDescription) - 1
+	drawRooms2()
 
+	fieldMap[1][1] = types["human"]
+
+	return fieldMap
+}
+
+func drawRooms2() {
+	rawStart = point{x: 0, y: 0}
+	cursorRectangle = point{x: 0, y: 0}
+	var newRoomSize point
+	var endOfRoom point
 	var i = 0
-	for notConnectedRoomsCount != 0 {
-		connectNotConnectedRooms()
+
+	for !generated {
+		newRoomSize = getRandomRoomSize()
+		endOfRoom = drawRoom2(cursorRectangle, newRoomSize)
+
+		if totalOccupiedCells == fieldSize["maxY"]*fieldSize["maxX"] || i > 1 {
+			generated = true
+		}
+
+		cursorRectangle = getRandomCursorRectangle(endOfRoom)
 		i++
 	}
 }
 
-func getRoomDescription(y, x int) (bool, roomDescription) {
-	for _, room := range roomsDescription {
-		if room.emptyList[concatYtoX(y, x)] {
-			return false, roomDescription{}
+func drawRoom2(cursorRectangle point, roomSize point) point {
+	var roomEndX int
+	var startY int
+	var roomEndY int
+
+	switch directionToDraw {
+	case 0:
+		roomEndX = cursorRectangle.x + roomSize.x
+		roomEndY = cursorRectangle.y - roomSize.y
+		break
+	case 1:
+		roomEndX = cursorRectangle.x + roomSize.x
+		//startY = getStartRowForRoom(cursorRectangle.x, roomEndX)
+		//roomEndY = startY + roomSize.y
+		roomEndY = cursorRectangle.y + roomSize.y
+		break
+	case 2:
+		roomEndX = cursorRectangle.x + roomSize.x
+		roomEndY = cursorRectangle.y + roomSize.y
+		break
+	case 3:
+		roomEndX = cursorRectangle.x - roomSize.x
+		roomEndY = cursorRectangle.y - roomSize.y
+		break
+	}
+
+	// fixing by borders
+	if roomEndY < 0 || roomEndY-1 == 0 {
+		roomEndY = 0
+	}
+
+	if roomEndY > fieldSize["maxY"] || roomEndY+1 == fieldSize["maxY"] {
+		roomEndY = fieldSize["maxY"]
+	}
+
+	if roomEndX < 0 || roomEndX-1 == 0 {
+		roomEndX = 0
+	}
+
+	if roomEndX > fieldSize["maxX"] || roomEndX+1 == fieldSize["maxX"] {
+		roomEndX = fieldSize["maxX"]
+	}
+
+	var occupiedCells = map[string]bool{}
+	var occupiedWalls = map[string]bool{}
+
+	for y := startY; y <= roomEndY; y++ {
+		for x := cursorRectangle.x; x <= roomEndX; x++ {
+			occupiedCells[concatYtoX(y, x)] = true
 		}
 	}
 
-	return true, generateRoomDescription(y, x)
+	for y := startY; y <= roomEndY; y++ {
+		if !wallsIntersect(y, cursorRectangle.x) {
+			fieldMap[y][cursorRectangle.x] = types["rock"]
+			occupiedWalls[concatYtoX(y, cursorRectangle.x)] = true
+		}
+
+		if !wallsIntersect(y, roomEndX) {
+			fieldMap[y][roomEndX] = types["rock"]
+			occupiedWalls[concatYtoX(y, roomEndX)] = true
+		}
+	}
+
+	for x := cursorRectangle.x; x <= roomEndX; x++ {
+		if !wallsIntersect(startY, x) {
+			fieldMap[startY][x] = types["rock"]
+			occupiedWalls[concatYtoX(startY, roomEndX)] = true
+		}
+
+		if !wallsIntersect(roomEndY, x) {
+			fieldMap[roomEndY][x] = types["rock"]
+			occupiedWalls[concatYtoX(roomEndY, roomEndX)] = true
+		}
+	}
+
+	createdRooms = append(createdRooms, room{
+		start:         point{x: cursorRectangle.x, y: startY},
+		end:           point{x: roomEndX, y: roomEndY},
+		occupiedCells: occupiedCells,
+		occupiedWalls: occupiedWalls,
+	})
+
+	totalOccupiedCells += len(occupiedCells) + len(occupiedWalls)
+
+	return point{y: roomEndY, x: roomEndX}
 }
 
-func generateRoomDescription(y, x int) roomDescription {
-	var roomDesc = roomDescription{
-		emptyList: map[string]bool{},
-		wallList:  map[string]bool{},
-		connected: map[int]bool{},
+func getRandomCursorRectangle(endOfLastRoom point) point {
+	var possibleDirections []int
+
+	// defining in which direction we can build
+	if cursorRectangle.y-1 > 1 {
+		possibleDirections = append(possibleDirections, 0)
 	}
 
-	roomDesc.emptyList[concatYtoX(y, x)] = true
-	var toCheck = []point{{y: y, x: x}}
-	var i = 0
-
-	for len(toCheck) != 0 && i < 250 {
-		var newToCheck []point
-
-		for _, fieldToCheck := range toCheck {
-			i++
-			y = fieldToCheck.y
-			x = fieldToCheck.x
-
-			if fieldMap[y-1][x] == types["rock"] {
-				roomDesc.wallList[concatYtoX(y-1, x)] = true
-			}
-
-			if fieldMap[y][x+1] == types["empty"] {
-				if !roomDesc.emptyList[concatYtoX(y, x+1)] {
-					newToCheck = append(newToCheck, point{y: y, x: x + 1})
-				}
-
-				roomDesc.emptyList[concatYtoX(y, x+1)] = true
-			} else {
-				roomDesc.wallList[concatYtoX(y, x+1)] = true
-			}
-
-			if fieldMap[y+1][x] == types["empty"] {
-				if !roomDesc.emptyList[concatYtoX(y+1, x)] {
-					newToCheck = append(newToCheck, point{y: y + 1, x: x})
-				}
-
-				roomDesc.emptyList[concatYtoX(y+1, x)] = true
-			} else {
-				roomDesc.wallList[concatYtoX(y+1, x)] = true
-			}
-
-			if fieldMap[y][x-1] == types["empty"] {
-				if !roomDesc.emptyList[concatYtoX(y, x-1)] {
-					newToCheck = append(newToCheck, point{y: y, x: x - 1})
-				}
-
-				roomDesc.emptyList[concatYtoX(y, x-1)] = true
-			} else {
-				roomDesc.wallList[concatYtoX(y, x-1)] = true
-			}
-		}
-
-		toCheck = newToCheck
-		newToCheck = []point{}
+	if cursorRectangle.x+1 < fieldSize["maxX"] {
+		possibleDirections = append(possibleDirections, 1)
 	}
 
-	return roomDesc
-}
-
-func connectNotConnectedRooms() {
-	for roomI := range notConnectedRooms {
-		if len(notConnectedRooms)-1 < roomI {
-			return
-		}
-
-		var room = &notConnectedRooms[roomI]
-		var connectVariants = getConnectVariants(room)
-		var connectNumber int
-
-		if len(connectVariants) > 0 {
-			connectNumber = getRandomInt(0, len(connectVariants))
-		} else {
-			continue
-		}
-
-		var toConnectI = connectVariants[connectNumber]
-		var toConnect = &roomsDescription[toConnectI]
-
-		if room.available || toConnect.available {
-			room.available = true
-			toConnect.available = true
-		}
-
-		connectTwoRooms(room, toConnect)
-		recalculateConnectionDiff(room)
-	}
-}
-
-func getConnectVariants(room *roomDescription) []int {
-	var roomWalls = getKeys(room.wallList)
-	var variants []int
-
-	for _, roomWall := range roomWalls {
-		for roomVariantI, roomVariant := range roomsDescription {
-			if roomVariant.id != room.id && roomVariant.wallList[roomWall] && findInt(variants, roomVariantI) == false {
-				variants = append(variants, roomVariantI)
-			}
-		}
+	if cursorRectangle.y+1 < fieldSize["maxY"] {
+		possibleDirections = append(possibleDirections, 2)
 	}
 
-	return variants
-}
-
-func connectTwoRooms(from, to *roomDescription) {
-	var jointWalls []string
-
-	if from.connected[to.id] {
-		return
+	if cursorRectangle.x-1 > 1 {
+		possibleDirections = append(possibleDirections, 3)
 	}
 
-	from.connected[to.id] = true
-	to.connected[from.id] = true
-
-	for fromWall := range from.wallList {
-		if to.wallList[fromWall] {
-			jointWalls = append(jointWalls, fromWall)
-		}
+	if len(possibleDirections) == 0 {
+		directionToDraw = -1
+		return point{}
 	}
 
-	var randomWall = jointWalls[getRandomInt(0, len(jointWalls))]
-	var coordinates = strings.Split(randomWall, ":")
-	var y, _ = strconv.Atoi(coordinates[0])
-	var x, _ = strconv.Atoi(coordinates[1])
-	var coordinates2 = point{y: y, x: x}
+	var newDirectionToDrawNumber = getRandomInt(0, len(possibleDirections))
+	directionToDraw = possibleDirections[newDirectionToDrawNumber]
+	fmt.Println(directionToDraw)
+	var sideOfRoom line
+	var newCursorRectangle point
 
-	if coordinates2.y == fieldSize["maxY"] || coordinates2.y == 0 || coordinates2.x == fieldSize["maxX"] || coordinates2.x == 0 {
-		return
+	switch directionToDraw {
+	case 0:
+		sideOfRoom = line{start: point{y: cursorRectangle.y, x: cursorRectangle.x}, end: point{y: cursorRectangle.y, x: endOfLastRoom.x}}
+		newCursorRectangle = point{y: sideOfRoom.start.y, x: getRandomInt(sideOfRoom.start.x, sideOfRoom.end.x)}
+		break
+	case 1:
+		sideOfRoom = line{start: point{y: cursorRectangle.y, x: endOfLastRoom.x}, end: point{y: endOfLastRoom.y, x: endOfLastRoom.x}}
+		newCursorRectangle = point{x: sideOfRoom.start.x, y: getRandomInt(sideOfRoom.start.y, sideOfRoom.end.y)}
+		break
+	case 2:
+		sideOfRoom = line{start: point{y: endOfLastRoom.y, x: endOfLastRoom.x}, end: point{y: endOfLastRoom.y, x: cursorRectangle.x}}
+		newCursorRectangle = point{y: sideOfRoom.end.y, x: getRandomInt(sideOfRoom.end.x, sideOfRoom.start.x)}
+		break
+	case 3:
+		sideOfRoom = line{start: point{y: endOfLastRoom.y, x: cursorRectangle.x}, end: point{y: cursorRectangle.y, x: cursorRectangle.x}}
+		newCursorRectangle = point{x: sideOfRoom.start.x, y: getRandomInt(sideOfRoom.end.y, sideOfRoom.start.y)}
+		break
 	}
 
-	fieldMap[coordinates2.y][coordinates2.x] = types["empty"]
-}
-
-func recalculateConnectionDiff(firstConnectedRoom *roomDescription) {
-	var toCheck = []*roomDescription{firstConnectedRoom}
-
-	for len(toCheck) != 0 {
-		var newToCheck []*roomDescription
-
-		//for _, connectedRoom := range toCheck {
-		for roomId := range toCheck {
-			var room = toCheck[roomId]
-
-			if len(room.connected) == 0 || room.available {
-				continue
-			}
-
-			room.available = true
-
-		xFor:
-			for roomIdRelation := range room.connected {
-				var roomRelation = &roomsDescription[roomIdRelation]
-
-				if roomRelation.available {
-					continue xFor
-				}
-				//roomRelation.available = true
-
-				newToCheck = append(newToCheck, roomRelation)
-			}
-		}
-		//}
-
-		toCheck = newToCheck
-	}
-
-	var filteredNotConnectedRooms []roomDescription
-	for _, r := range roomsDescription {
-		if !r.available {
-			filteredNotConnectedRooms = append(filteredNotConnectedRooms, r)
-		}
-	}
-	notConnectedRooms = filteredNotConnectedRooms
-	notConnectedRoomsCount = len(notConnectedRooms)
-}
-
-func concatYtoX(y, x int) string {
-	return strconv.Itoa(y) + ":" + strconv.Itoa(x)
+	return newCursorRectangle
 }
